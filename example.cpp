@@ -21,10 +21,17 @@ mno::req<file> read_file(const char *);
 file_agg<h> parse_header(file);
 file_agg<b> parse_body(file_agg<h>);
 
-mno::req<b> blah() {
+mno::req<b> parse_file_serially() {
   return read_file("")
       .otherwise("File not found")
       .then(parse_header)
       .then(parse_body)
       .then(&file_agg<b>::agg);
+}
+
+mno::req<char> read_u8();
+mno::req<int> read_u16() {
+  return read_u8().compose([](char lo) {
+    return read_u8().then([lo](char hi) -> int { return hi << 8 | lo; });
+  });
 }

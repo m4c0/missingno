@@ -10,6 +10,8 @@ export template <typename T> class req {
   template <typename> friend class req;
 
 public:
+  using type = T;
+
   constexpr req() noexcept = default;
   constexpr req(T val) noexcept : m_val{val}, m_msg{} {}
 
@@ -20,7 +22,7 @@ public:
     return m_msg == nullptr ? m_val : def;
   }
 
-  [[nodiscard]] constexpr auto then(auto fn) const noexcept(noexcept(fn(T{})))
+  [[nodiscard]] constexpr auto then(auto fn) const noexcept
       -> req<decltype(fn(T{}))> {
     if (m_msg == nullptr)
       return {fn(m_val), nullptr};
@@ -29,6 +31,13 @@ public:
   template <typename S, typename TT = T>
   [[nodiscard]] constexpr req<S> then(S TT::*m) const noexcept {
     return {(m_msg == nullptr) ? m_val.*m : S{}, m_msg};
+  }
+
+  [[nodiscard]] constexpr auto compose(auto fn) const noexcept
+      -> req<typename decltype(fn(T{}))::type> {
+    if (m_msg == nullptr)
+      return fn(m_val);
+    return {{}, m_msg};
   }
 
   [[nodiscard]] constexpr static req<T> failed(const char *m) noexcept {
@@ -74,5 +83,9 @@ static_assert([] { return req{true}.unwrap(false); }());
 
 static_assert([] {
   return req<void>{}.then([] { return true; }).unwrap(false);
+}());
+
+static_assert([] {
+  return req{false}.compose([](bool) { return req{true}; }).unwrap(false);
 }());
 } // namespace mno
