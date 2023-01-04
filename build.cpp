@@ -1,9 +1,9 @@
-#include "../ecow/ecow.hpp"
+#include "build.hpp"
 
 using namespace ecow;
 
 int main(int argc, char **argv) {
-  auto m = unit::create<mod>("missingno");
+  auto m = missingno();
 
   auto all = unit::create<seq>("all");
   all->add_ref(m);
