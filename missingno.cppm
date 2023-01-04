@@ -37,6 +37,32 @@ public:
 };
 template <typename T> req(T) -> req<T>;
 
+export template <> class req<void> {
+  const char *m_msg;
+
+  constexpr req(const char *msg) noexcept : m_msg{msg} {}
+
+  template <typename> friend class req;
+
+public:
+  constexpr req() noexcept = default;
+
+  [[nodiscard]] constexpr req<void> otherwise(const char *m) const noexcept {
+    return {m_msg == nullptr ? nullptr : m};
+  };
+
+  [[nodiscard]] constexpr auto then(auto fn) const noexcept(noexcept(fn()))
+      -> req<decltype(fn())> {
+    if (m_msg == nullptr)
+      return {fn(), nullptr};
+    return {{}, m_msg};
+  }
+
+  [[nodiscard]] constexpr static req<void> failed(const char *m) noexcept {
+    return {m};
+  }
+};
+
 static_assert([] {
   constexpr const auto flip = [](bool b) { return !b; };
   return req<bool>::failed("Some error message")
@@ -45,4 +71,8 @@ static_assert([] {
       .unwrap(true);
 }());
 static_assert([] { return req{true}.unwrap(false); }());
+
+static_assert([] {
+  return req<void>{}.then([] { return true; }).unwrap(false);
+}());
 } // namespace mno
