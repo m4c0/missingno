@@ -23,7 +23,7 @@ file_agg<b> parse_body(file_agg<h>);
 
 mno::req<b> parse_file_serially() {
   return read_file("")
-      .otherwise("File not found")
+      .if_failed("File not found")
       .then(parse_header)
       .then(parse_body)
       .then(&file_agg<b>::agg);
