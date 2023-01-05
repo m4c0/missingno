@@ -44,7 +44,7 @@ public:
     return {T{}, m};
   }
 };
-template <typename T> req(T) -> req<T>;
+export template <typename T> req(T) -> req<T>;
 
 export template <> class req<void> {
   const char *m_msg;
@@ -60,10 +60,17 @@ public:
     return {m_msg == nullptr ? nullptr : m};
   };
 
-  [[nodiscard]] constexpr auto then(auto fn) const noexcept(noexcept(fn()))
+  [[nodiscard]] constexpr auto then(auto fn) const noexcept
       -> req<decltype(fn())> {
     if (m_msg == nullptr)
       return {fn(), nullptr};
+    return {{}, m_msg};
+  }
+
+  [[nodiscard]] constexpr auto compose(auto fn) const noexcept
+      -> req<typename decltype(fn())::type> {
+    if (m_msg == nullptr)
+      return fn();
     return {{}, m_msg};
   }
 
@@ -82,10 +89,14 @@ static_assert([] {
 static_assert([] { return req{true}.unwrap(false); }());
 
 static_assert([] {
-  return req<void>{}.then([] { return true; }).unwrap(false);
+  return req{false}.compose([](bool) { return req{true}; }).unwrap(false);
 }());
 
 static_assert([] {
-  return req{false}.compose([](bool) { return req{true}; }).unwrap(false);
+  return req<void>{}.then([] { return true; }).unwrap(false);
 }());
+static_assert([] {
+  return req<void>{}.compose([] { return req{true}; }).unwrap(false);
+}());
+
 } // namespace mno
