@@ -1,11 +1,14 @@
 export module missingno;
 
 namespace mno {
+class erred {};
+
 export template <typename T> class req {
   T m_val;
   const char *m_msg;
 
   constexpr req(T val, const char *msg) noexcept : m_val{val}, m_msg{msg} {}
+  constexpr req(erred, const char *msg) noexcept : m_val{}, m_msg{msg} {}
 
   template <typename> friend class req;
 
@@ -26,7 +29,7 @@ public:
       -> req<decltype(fn(T{}))> {
     if (m_msg == nullptr)
       return {fn(m_val), nullptr};
-    return {{}, m_msg};
+    return {erred{}, m_msg};
   }
   template <typename S, typename TT = T>
   [[nodiscard]] constexpr req<S> then(S TT::*m) const noexcept {
@@ -37,7 +40,7 @@ public:
       -> req<typename decltype(fn(T{}))::type> {
     if (m_msg == nullptr)
       return fn(m_val);
-    return {{}, m_msg};
+    return {erred{}, m_msg};
   }
 
   [[nodiscard]] constexpr static req<T> failed(const char *m) noexcept {
@@ -50,10 +53,13 @@ export template <> class req<void> {
   const char *m_msg;
 
   constexpr req(const char *msg) noexcept : m_msg{msg} {}
+  constexpr req(erred, const char *msg) noexcept : m_msg{msg} {}
 
   template <typename> friend class req;
 
 public:
+  using type = void;
+
   constexpr req() noexcept = default;
 
   [[nodiscard]] constexpr req<void> otherwise(const char *m) const noexcept {
@@ -64,14 +70,14 @@ public:
       -> req<decltype(fn())> {
     if (m_msg == nullptr)
       return {fn(), nullptr};
-    return {{}, m_msg};
+    return {erred{}, m_msg};
   }
 
   [[nodiscard]] constexpr auto compose(auto fn) const noexcept
       -> req<typename decltype(fn())::type> {
     if (m_msg == nullptr)
       return fn();
-    return {{}, m_msg};
+    return {erred{}, m_msg};
   }
 
   [[nodiscard]] constexpr static req<void> failed(const char *m) noexcept {
@@ -96,7 +102,10 @@ static_assert([] {
   return req<void>{}.then([] { return true; }).unwrap(false);
 }());
 static_assert([] {
-  return req<void>{}.compose([] { return req{true}; }).unwrap(false);
+  return req<void>{}
+      .compose([] { return req<void>{}; })
+      .compose([] { return req{true}; })
+      .unwrap(false);
 }());
 
 } // namespace mno
