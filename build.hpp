@@ -2,5 +2,7 @@
 
 inline auto missingno() {
   using namespace ecow;
-  return unit::create<mod>("missingno");
+  auto m = unit::create<mod>("missingno");
+  m->add_part("value");
+  return m;
 }
