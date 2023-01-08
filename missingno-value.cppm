@@ -50,6 +50,15 @@ template <typename T>
   fn();
   return value<void>{};
 }
+template <typename T>
+[[nodiscard]] constexpr bool operator==(const value<T> &a,
+                                        const value<T> &b) noexcept {
+  return a.v == b.v;
+}
+[[nodiscard]] constexpr bool operator==(const value<void> &a,
+                                        const value<void> &b) noexcept {
+  return true;
+}
 
 static_assert([] {
   // void -> 1 -> bool -> void -> void -> bool

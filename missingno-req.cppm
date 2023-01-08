@@ -68,6 +68,19 @@ public:
 
     return req<T>{mno::map(value<void>{}, fn), nullptr};
   }
+
+  [[nodiscard]] constexpr bool operator==(const req<T> &o) const noexcept {
+    if ((m_msg != nullptr) && (o.m_msg != nullptr))
+      return true;
+    if ((m_msg != nullptr) != (o.m_msg != nullptr))
+      return true;
+
+    return m_val == o.m_val;
+  }
+  template <typename TT>
+  [[nodiscard]] constexpr bool operator==(TT v) const noexcept {
+    return (m_msg == nullptr) && m_val.v == v;
+  }
 };
 template <typename T> req(T) -> req<T>;
 
@@ -94,4 +107,25 @@ static_assert(req<void>{}
                   .fmap([] { return req<void>{}; })
                   .fmap([] { return req{true}; })
                   .unwrap(false));
+
+static_assert(req{3} == 3);
+static_assert(req{2} != 3);
+static_assert(req<int>::failed("") != 3);
+
+export template <typename A, typename B>
+[[nodiscard]] constexpr auto combine(const req<A> &a, const req<B> &b,
+                                     auto fn) noexcept {
+  return a.fmap([&](const auto &va) {
+    return b.map([&](const auto &vb) { return fn(va, vb); });
+  });
+}
+static_assert(combine(req{3}, req{6}, [](auto a, auto b) { return a + b; }) ==
+              req{9});
+static_assert(combine(req<int>::failed("failed"), req{6}, [](auto, auto) {}) ==
+              req<void>::failed("failed"));
+static_assert(combine(req{3}, req<int>::failed("failed"), [](auto, auto) {}) ==
+              req<void>::failed("failed"));
+static_assert(combine(req<int>::failed("this failed"),
+                      req<int>::failed("also failed"),
+                      [](auto, auto) {}) == req<void>::failed("this failed"));
 }; // namespace mno
