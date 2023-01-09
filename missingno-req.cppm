@@ -7,8 +7,8 @@ class erred {};
 export template <typename T> class req;
 
 export template <typename T> class req {
-  value<T> m_val;
-  const char *m_msg;
+  value<T> m_val{};
+  const char *m_msg{};
 
   constexpr req(value<T> val, const char *msg) noexcept
       : m_val{val}, m_msg{msg} {}
@@ -33,7 +33,7 @@ public:
   }
   [[nodiscard]] constexpr req<T> if_failed(const char *m) const noexcept {
     return {m_val, m_msg == nullptr ? nullptr : m};
-  };
+  }
 
   template <typename TT>
   [[nodiscard]] constexpr T unwrap(TT def) const noexcept {
