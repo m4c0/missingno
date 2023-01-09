@@ -24,14 +24,10 @@ file_agg<b> parse_body(file_agg<h>);
 mno::req<b> parse_file_serially() {
   return read_file("")
       .if_failed("File not found")
-      .then(parse_header)
-      .then(parse_body)
-      .then(&file_agg<b>::agg);
+      .map(parse_header)
+      .map(parse_body)
+      .map(&file_agg<b>::agg);
 }
 
 mno::req<char> read_u8();
-mno::req<int> read_u16() {
-  return read_u8().compose([](char lo) {
-    return read_u8().then([lo](char hi) -> int { return hi << 8 | lo; });
-  });
-}
+mno::req<int> read_u16() { return read_u8() | (read_u8() << 8); }

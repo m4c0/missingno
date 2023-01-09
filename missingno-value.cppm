@@ -36,6 +36,10 @@ template <typename T>
 [[nodiscard]] constexpr auto map(value<T> v, auto fn) noexcept {
   return value{fn(v.v)};
 }
+template <typename T, typename R>
+[[nodiscard]] constexpr auto map(value<T> v, R T::*m) noexcept {
+  return value{(v.v).*m};
+}
 template <typename T>
 [[nodiscard]] constexpr value<void> map(value<T> v,
                                         consumer<T> auto fn) noexcept {
