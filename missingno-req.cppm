@@ -26,7 +26,13 @@ public:
   using type = T;
 
   constexpr req() noexcept = default;
-  template <typename TT> constexpr req(TT val) noexcept : m_val{val}, m_msg{} {}
+  template <typename TT>
+  constexpr explicit req(TT val) noexcept : m_val{val}, m_msg{} {}
+
+  constexpr req(const req<T> &) noexcept = default;
+  constexpr req(req<T> &&) noexcept = default;
+  constexpr req &operator=(const req<T> &) noexcept = default;
+  constexpr req &operator=(req<T> &&) noexcept = default;
 
   [[nodiscard]] constexpr static req<T> failed(const char *m) noexcept {
     return {erred{}, m};

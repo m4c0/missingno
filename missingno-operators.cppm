@@ -10,11 +10,25 @@ static_assert((req{3} + 2) == req{5});
 static_assert((req<int>::failed("failed") + 5) == req<int>::failed("failed"));
 
 export template <typename A, typename B>
+[[nodiscard]] constexpr auto operator-(const req<A> &a, B b) noexcept {
+  return a.map([&](auto a) { return a - b; });
+}
+static_assert((req{3} - 2) == req{1});
+static_assert((req<int>::failed("failed") - 5) == req<int>::failed("failed"));
+
+export template <typename A, typename B>
 [[nodiscard]] constexpr auto operator&(const req<A> &a, B b) noexcept {
   return a.map([&](auto a) { return a & b; });
 }
 static_assert((req{0b1111} & 0b0100) == req{0b0100});
 static_assert((req<int>::failed("failed") & 1) == req<int>::failed("failed"));
+
+export template <typename A, typename B>
+[[nodiscard]] constexpr auto operator|(const req<A> &a, B b) noexcept {
+  return a.map([&](auto a) { return a | b; });
+}
+static_assert((req{0b1010} | 0b0101) == req{0b1111});
+static_assert((req<int>::failed("failed") | 1) == req<int>::failed("failed"));
 
 export template <typename A, typename B>
 [[nodiscard]] constexpr auto operator<<(const req<A> &a, B b) noexcept {
