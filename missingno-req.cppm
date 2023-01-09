@@ -34,6 +34,13 @@ public:
   [[nodiscard]] constexpr req<T> if_failed(const char *m) const noexcept {
     return {m_val, m_msg == nullptr ? nullptr : m};
   }
+  [[nodiscard]] constexpr req<T> assert(auto fn, const char *m) const noexcept {
+    if (m_msg != nullptr)
+      return *this;
+    if (!mno::map(m_val, fn).v)
+      return {erred{}, m};
+    return *this;
+  }
 
   template <typename TT>
   [[nodiscard]] constexpr T unwrap(TT def) const noexcept {
@@ -88,6 +95,7 @@ static_assert(req{3} == req{3});
 static_assert(req{2} != req{3});
 static_assert(req{3} != req<int>::failed(""));
 static_assert(req<int>::failed("") != req{3});
+// TODO: static_assert(req<int>::failed("") != req<int>::failed("a"));
 static_assert(req<int>::failed("a") == req<int>::failed("a"));
 
 static_assert([] {
@@ -102,6 +110,15 @@ static_assert(req{true}.unwrap(false));
 static_assert(req<bool>::failed("Error").otherwise(true).unwrap(false));
 static_assert(
     req<bool>::failed("Error").otherwise([] { return true; }).unwrap(false));
+
+static_assert(req<void>::failed("fail").assert([] { return false; }, "") ==
+              req<void>::failed("fail"));
+static_assert(req<void>::failed("fail").assert([] { return true; }, "") ==
+              req<void>::failed("fail"));
+static_assert(req<void>{}.assert([] { return false; }, "asserted") ==
+              req<void>::failed("asserted"));
+static_assert(req<void>{}.assert([] { return true; }, "") == req<void>{});
+static_assert(req{3}.assert([](auto v) { return v == 3; }, "") == req{3});
 
 static_assert(req{false}.fmap([](bool b) { return req{!b}; }).unwrap(false));
 
