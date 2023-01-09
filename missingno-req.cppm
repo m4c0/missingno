@@ -73,7 +73,7 @@ public:
     if ((m_msg != nullptr) && (o.m_msg != nullptr))
       return true;
     if ((m_msg != nullptr) != (o.m_msg != nullptr))
-      return true;
+      return false;
 
     return m_val == o.m_val;
   }
@@ -83,6 +83,12 @@ public:
   }
 };
 template <typename T> req(T) -> req<T>;
+
+static_assert(req{3} == req{3});
+static_assert(req{2} != req{3});
+static_assert(req{3} != req<int>::failed(""));
+static_assert(req<int>::failed("") != req{3});
+static_assert(req<int>::failed("a") == req<int>::failed("a"));
 
 static_assert([] {
   constexpr const auto flip = [](bool b) { return !b; };
