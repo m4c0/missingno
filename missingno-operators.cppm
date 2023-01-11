@@ -47,28 +47,30 @@ static_assert((req<int>::failed("failed") >> 4) == req<int>::failed("failed"));
 export template <typename A, typename B>
 [[nodiscard]] constexpr auto operator+(const req<A> &a,
                                        const req<B> &b) noexcept {
-  return combine(a, b, [](const auto &va, const auto &vb) { return va + vb; });
+  return combine([](const auto &va, const auto &vb) { return va + vb; }, a, b);
 }
 static_assert(req{3} + req{6} == req{9});
 
 export template <typename A, typename B>
 [[nodiscard]] constexpr auto operator-(const req<A> &a,
                                        const req<B> &b) noexcept {
-  return combine(a, b, [](const auto &va, const auto &vb) { return va - vb; });
+  return combine([](const auto &va, const auto &vb) { return va - vb; }, a, b);
 }
 static_assert(req{3} - req{6} == req{-3});
 
 export template <typename A, typename B>
 [[nodiscard]] constexpr auto operator&(const req<A> &a,
                                        const req<B> &b) noexcept {
-  return combine(a, b, [](const auto &va, const auto &vb) { return va & vb; });
+  return combine([](const auto &va, const auto &vb) { return va & vb; }, a, b);
 }
 static_assert((req{0b101} & req{0b100}) == req{0b100});
 
 export template <typename A, typename B>
 [[nodiscard]] constexpr auto operator|(const req<A> &a,
                                        const req<B> &b) noexcept {
-  return combine(a, b, [](const auto &va, const auto &vb) { return va | vb; });
+  return combine([](const auto &va, const auto &vb) { return va | vb; }, a, b);
 }
 static_assert((req{0b100} | req{0b001}) == req{0b101});
+
+static_assert(((req{0x5} << 4) | req{0xA}) == req{0x5A});
 } // namespace mno

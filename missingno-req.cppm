@@ -141,20 +141,24 @@ static_assert(req{3} == 3);
 static_assert(req{2} != 3);
 static_assert(req<int>::failed("") != 3);
 
-export template <typename A, typename B>
-[[nodiscard]] constexpr auto combine(const req<A> &a, const req<B> &b,
-                                     auto fn) noexcept {
-  return a.fmap([&](const auto &va) {
-    return b.map([&](const auto &vb) { return fn(va, vb); });
+export template <typename A, typename... B>
+[[nodiscard]] constexpr auto combine(auto fn, const req<A> &a,
+                                     const req<B> &...b) noexcept {
+  return a.fmap([&](auto a) {
+    return combine([&](B... b) { return fn(a, b...); }, b...);
   });
 }
-static_assert(combine(req{3}, req{6}, [](auto a, auto b) { return a + b; }) ==
+export template <typename A>
+[[nodiscard]] constexpr auto combine(auto fn, const req<A> &a) noexcept {
+  return a.map(fn);
+}
+static_assert(combine([](auto a, auto b) { return a + b; }, req{3}, req{6}) ==
               req{9});
-static_assert(combine(req<int>::failed("failed"), req{6}, [](auto, auto) {}) ==
+static_assert(combine([](auto, auto) {}, req<int>::failed("failed"), req{6}) ==
               req<void>::failed("failed"));
-static_assert(combine(req{3}, req<int>::failed("failed"), [](auto, auto) {}) ==
+static_assert(combine([](auto, auto) {}, req{3}, req<int>::failed("failed")) ==
               req<void>::failed("failed"));
-static_assert(combine(req<int>::failed("this failed"),
-                      req<int>::failed("also failed"),
-                      [](auto, auto) {}) == req<void>::failed("this failed"));
+static_assert(combine([](auto, auto) {}, req<int>::failed("this failed"),
+                      req<int>::failed("also failed")) ==
+              req<void>::failed("this failed"));
 }; // namespace mno
