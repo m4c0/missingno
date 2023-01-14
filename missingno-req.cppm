@@ -1,4 +1,5 @@
 export module missingno:req;
+import :traits;
 import :value;
 
 namespace mno {
@@ -27,7 +28,7 @@ public:
 
   constexpr req() noexcept = default;
   template <typename TT>
-  constexpr explicit req(TT val) noexcept : m_val{val}, m_msg{} {}
+  constexpr explicit req(TT &&val) noexcept : m_val{fwd<TT>(val)}, m_msg{} {}
 
   constexpr req(const req<T> &) noexcept = default;
   constexpr req(req<T> &&) noexcept = default;
