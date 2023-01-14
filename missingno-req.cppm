@@ -133,7 +133,7 @@ static_assert(req<void>{}.map([] { return true; }).unwrap(false));
 
 static_assert(req<void>{}
                   .map([] {})
-                  .otherwise([] { throw 0; })
+                  .otherwise((void (*)()) nullptr) // should never happen
                   .fmap([] { return req<void>{}; })
                   .fmap([] { return req{true}; })
                   .unwrap(false));
