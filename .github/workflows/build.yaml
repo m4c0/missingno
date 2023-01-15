@@ -14,30 +14,15 @@ jobs:
           - windows-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - if: matrix.os == 'macos-latest'
-        run: brew install llvm
-      - if: matrix.os == 'windows-latest'
-        run: choco upgrade llvm -y
-      - if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
-          wget https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-17/wasi-sysroot-17.0.tar.gz
-          tar xfv wasi-sysroot-17.0.tar.gz
-          wget https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-17/libclang_rt.builtins-wasm32-wasi-17.0.tar.gz
-          cd wasi-sysroot
-          tar xvf ../libclang_rt.builtins-wasm32-wasi-17.0.tar.gz
+      - name: 🧰 Setup
+        uses: m4c0/ecow/.github/actions/setup@main
+        with:
+          os: ${{ matrix.os }}
       - uses: actions/checkout@v3
         with:
           path: missingno
-      - uses: actions/checkout@v3
+      - name: 🔨 Build
+        uses: m4c0/ecow/.github/actions/compile@main
         with:
-          repository: m4c0/ecow
-          path: ecow
-      - run: clang++ -I ../ecow -std=c++20 build.cpp -o build.exe
-        working-directory: missingno
-      - if: matrix.os != 'ubuntu-latest'
-        run: ./build.exe
-        working-directory: missingno
-      - if: matrix.os == 'ubuntu-latest'
-        run: ./build.exe android wasm
-        working-directory: missingno
+          os: ${{ matrix.os }}
+          project: missingno
