@@ -26,7 +26,7 @@ mno::req<b> parse_file_serially() {
       .if_failed("File not found")
       .map(parse_header)
       .map(parse_body)
-      .map(&file_agg<b>::agg);
+      .map([](auto fa) { return fa.agg; });
 }
 
 mno::req<char> read_u8();
