@@ -1,3 +1,5 @@
+#pragma once
+
 #include "../ecow/ecow.hpp"
 
 inline auto missingno() {
