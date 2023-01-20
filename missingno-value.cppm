@@ -1,4 +1,5 @@
 export module missingno:value;
+import :traits;
 
 namespace mno {
 template <typename A, typename B> struct is_same {
@@ -12,15 +13,25 @@ static_assert(!is_same<int, void>::value);
 
 template <typename A, typename B>
 concept same_as = is_same<A, B>::value;
+template <typename A, typename B>
+concept not_same_as = (!is_same<A, B>::value);
 
 template <typename T, typename V>
-concept consumer = requires(T t, V v) {
-                     { t(v) } -> same_as<void>;
+concept consumer = requires(T t, V &&v) {
+                     { t(fwd<V>(v).v) } -> same_as<void>;
                    };
+template <typename T, typename V>
+concept mapper = requires(T t, V &&v) {
+                   { t(fwd<V>(v).v) } -> not_same_as<void>;
+                 };
 template <typename T>
 concept void_consumer = requires(T t) {
                           { t() } -> same_as<void>;
                         };
+template <typename T>
+concept void_mapper = requires(T t) {
+                        { t() } -> not_same_as<void>;
+                      };
 
 template <typename T> struct value {
   T v{};
@@ -32,21 +43,16 @@ template <> struct value<void> {
 };
 template <typename T> value(T) -> value<T>;
 
-template <typename T>
-[[nodiscard]] constexpr auto map(value<T> v, auto fn) noexcept {
-  return value{fn(v.v)};
+template <typename V>
+[[nodiscard]] constexpr auto map(V &&v, mapper<V> auto fn) noexcept {
+  return value{fn(fwd<V>(v).v)};
 }
-template <typename T, typename R>
-[[nodiscard]] constexpr auto map(value<T> v, R T::*m) noexcept {
-  return value{(v.v).*m};
-}
-template <typename T>
-[[nodiscard]] constexpr value<void> map(value<T> v,
-                                        consumer<T> auto fn) noexcept {
-  fn(v.v);
+template <typename V>
+[[nodiscard]] constexpr auto map(V &&v, consumer<V> auto fn) noexcept {
+  fn(fwd<V>(v).v);
   return value<void>{};
 }
-[[nodiscard]] constexpr auto map(value<void> v, auto fn) noexcept {
+[[nodiscard]] constexpr auto map(value<void> v, void_mapper auto fn) noexcept {
   return value{fn()};
 }
 [[nodiscard]] constexpr auto map(value<void> v,
@@ -73,5 +79,18 @@ static_assert([] {
   constexpr const auto v1 = map(vb, [](auto b) {});
   constexpr const auto v2 = map(v1, [] {});
   return map(v2, [] { return true; }).v;
+}());
+static_assert([] {
+  struct s {
+    constexpr s() = default;
+    constexpr s(const s &) = delete;
+    constexpr s &operator=(const s &) = delete;
+    constexpr s(s &&) = default;
+    constexpr s &operator=(s &&) = default;
+    constexpr bool non_const_check() noexcept { return true; }
+  };
+  value<s> v0{};
+  auto v1 = map(v0, [](auto &a) { return a.non_const_check(); });
+  return v1.v;
 }());
 } // namespace mno
