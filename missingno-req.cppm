@@ -58,6 +58,13 @@ public:
     return {value<T>{m_msg == nullptr ? m_val.v : def}, nullptr};
   }
 
+  [[nodiscard]] constexpr auto map(auto fn) noexcept {
+    using O = typename decltype(mno::map(m_val, fn))::type;
+
+    if (m_msg == nullptr)
+      return req<O>{mno::map(m_val, fn), nullptr};
+    return req<O>{erred{}, m_msg};
+  }
   [[nodiscard]] constexpr auto map(auto fn) const noexcept {
     using O = typename decltype(mno::map(m_val, fn))::type;
 
@@ -66,6 +73,14 @@ public:
     return req<O>{erred{}, m_msg};
   }
 
+  [[nodiscard]] constexpr auto fmap(auto fn) noexcept {
+    using RO = typename decltype(mno::map(m_val, fn))::type;
+    using O = typename RO::type;
+
+    if (m_msg == nullptr)
+      return mno::map(m_val, fn).v;
+    return req<O>{erred{}, m_msg};
+  }
   [[nodiscard]] constexpr auto fmap(auto fn) const noexcept {
     using RO = typename decltype(mno::map(m_val, fn))::type;
     using O = typename RO::type;
@@ -162,4 +177,19 @@ static_assert(combine([](auto, auto) {}, req{3}, req<int>::failed("failed")) ==
 static_assert(combine([](auto, auto) {}, req<int>::failed("this failed"),
                       req<int>::failed("also failed")) ==
               req<void>::failed("this failed"));
+
+static_assert([] {
+  struct s {
+    constexpr s() = default;
+    constexpr s(s &&) = default;
+    constexpr s &operator=(s &&) = default;
+    constexpr s(const s &) = delete;
+    constexpr s &operator=(const s &) = delete;
+    constexpr bool non_const() { return true; }
+  };
+  return req<s>()
+      .fmap([](auto &&o) { return req{static_cast<s &&>(o)}; })
+      .map([](auto &&o) { return o.non_const(); })
+      .unwrap(false);
+}());
 }; // namespace mno
