@@ -1,6 +1,6 @@
 export module missingno:req;
-import :traits;
 import :value;
+import traits;
 
 namespace mno {
 class erred {};
