@@ -49,6 +49,13 @@ public:
     return *this;
   }
 
+  [[nodiscard]] constexpr auto take(auto errfn) {
+    if (m_msg != nullptr) {
+      errfn(m_msg);
+    }
+    return traits::move(m_val.v);
+  }
+
   template <typename TT>
   [[nodiscard]] constexpr T unwrap(TT def) const noexcept {
     return m_msg == nullptr ? m_val.v : def;
