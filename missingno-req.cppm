@@ -62,7 +62,7 @@ public:
     using O = typename decltype(mno::map(m_val, fn))::type;
 
     if (m_msg == nullptr)
-      return req<O>{mno::map(m_val, fn), nullptr};
+      return req<O>{mno::map(m_val, fn)};
     return req<O>{erred{}, m_msg};
   }
   [[nodiscard]] constexpr auto map(auto fn) const noexcept {
