@@ -53,7 +53,7 @@ public:
     if (m_msg != nullptr) {
       errfn(m_msg);
     }
-    return traits::move(m_val.v);
+    return move_out(m_val);
   }
 
   template <typename TT>

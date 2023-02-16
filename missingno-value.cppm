@@ -31,6 +31,11 @@ template <> struct value<void> {
 };
 template <typename T> value(T) -> value<T>;
 
+template <typename V> [[nodiscard]] constexpr auto move_out(V &&v) noexcept {
+  return traits::move(v.v);
+}
+constexpr void move_out(value<void> v) noexcept {}
+
 template <typename V>
 [[nodiscard]] constexpr auto map(V &&v, mapper<V> auto fn) noexcept {
   return value{fn(fwd<V>(v).v)};
