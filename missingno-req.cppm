@@ -2,6 +2,8 @@ export module missingno:req;
 import :value;
 import traits;
 
+using namespace traits;
+
 namespace mno {
 class erred {};
 
@@ -57,8 +59,14 @@ public:
   }
 
   template <typename TT>
+    requires is_assignable_from<T, TT>
   [[nodiscard]] constexpr T unwrap(TT def) const noexcept {
     return m_msg == nullptr ? m_val.v : def;
+  }
+  template <typename TT>
+    requires is_not_assignable_from<T, TT> && is_same_v<T, call_result_t<TT>>
+  [[nodiscard]] constexpr T unwrap(TT def) const noexcept {
+    return m_msg == nullptr ? m_val.v : def();
   }
   template <typename TT>
   [[nodiscard]] constexpr req<T> otherwise(TT def) const noexcept {
@@ -135,6 +143,9 @@ static_assert([] {
       .unwrap(true);
 }());
 static_assert(req{true}.unwrap(false));
+
+static_assert(req{true}.unwrap([] { return false; }));
+static_assert(req<bool>::failed("Error").unwrap([] { return true; }));
 
 static_assert(req<bool>::failed("Error").otherwise(true).unwrap(false));
 static_assert(
