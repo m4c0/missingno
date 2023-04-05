@@ -69,6 +69,11 @@ public:
     using O = typename RO::type;
     return m_filled ? mno::map(m_val, fn).v : opt<O>{};
   }
+
+  constexpr void consume(auto fn) noexcept {
+    if (m_filled)
+      fn(m_val.v);
+  }
 };
 template <typename T> opt(T) -> opt<T>;
 
