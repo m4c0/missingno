@@ -43,12 +43,12 @@ public:
   [[nodiscard]] constexpr req<T> if_failed(const char *m) const noexcept {
     return {m_val, m_msg == nullptr ? nullptr : m};
   }
-  [[nodiscard]] constexpr req<T> assert(auto fn, const char *m) const noexcept {
+  [[nodiscard]] constexpr auto assert(auto fn, const char *m) noexcept {
     if (m_msg != nullptr)
-      return *this;
+      return req<T>{erred{}, m_msg};
     if (!mno::map(m_val, fn).v)
-      return {erred{}, m};
-    return *this;
+      return req<T>{erred{}, m};
+    return req<T>{traits::move(m_val.v)};
   }
 
   [[nodiscard]] constexpr auto take(auto errfn) {
@@ -151,13 +151,13 @@ static_assert(req<bool>::failed("Error").otherwise(true).unwrap(false));
 static_assert(
     req<bool>::failed("Error").otherwise([] { return true; }).unwrap(false));
 
-static_assert(req<void>::failed("fail").assert([] { return false; }, "") ==
-              req<void>::failed("fail"));
-static_assert(req<void>::failed("fail").assert([] { return true; }, "") ==
-              req<void>::failed("fail"));
-static_assert(req<void>{}.assert([] { return false; }, "asserted") ==
-              req<void>::failed("asserted"));
-static_assert(req<void>{}.assert([] { return true; }, "") == req<void>{});
+static_assert(req<int>::failed("fail").assert([](auto) { return false; }, "") ==
+              req<int>::failed("fail"));
+static_assert(req<int>::failed("fail").assert([](auto) { return true; }, "") ==
+              req<int>::failed("fail"));
+static_assert(req<int>{}.assert([](auto) { return false; }, "asserted") ==
+              req<int>::failed("asserted"));
+static_assert(req<int>{}.assert([](auto) { return true; }, "") == req<int>{});
 static_assert(req{3}.assert([](auto v) { return v == 3; }, "") == req{3});
 
 static_assert(req{false}.fmap([](bool b) { return req{!b}; }).unwrap(false));
@@ -206,6 +206,7 @@ static_assert([] {
     constexpr bool non_const() { return true; }
   };
   return req<s>()
+      .assert([](auto &&o) { return true; }, "failed")
       .fmap([](auto &&o) { return req{static_cast<s &&>(o)}; })
       .map([](auto &&o) { return o.non_const(); })
       .unwrap(false);
