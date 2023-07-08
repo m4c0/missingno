@@ -26,6 +26,9 @@ public:
     return *this;
   }
 
+  [[nodiscard]] constexpr explicit operator bool() const noexcept {
+    return m_filled;
+  }
   [[nodiscard]] constexpr bool operator==(const opt<T> &o) const noexcept {
     if (m_filled != o.m_filled)
       return false;
@@ -76,6 +79,9 @@ public:
   }
 };
 template <typename T> opt(T) -> opt<T>;
+
+static_assert(opt{3});
+static_assert(!opt<int>{});
 
 static_assert(opt{3} == opt{3});
 static_assert(opt{2} != opt{3});
