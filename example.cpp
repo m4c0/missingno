@@ -1,3 +1,5 @@
+#pragma leco tool
+
 import missingno;
 
 class h {
@@ -31,3 +33,5 @@ mno::req<b> parse_file_serially() {
 
 mno::req<char> read_u8();
 mno::req<int> read_u16() { return read_u8() | (read_u8() << 8); }
+
+int main() {}
