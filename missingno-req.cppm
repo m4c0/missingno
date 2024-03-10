@@ -135,6 +135,9 @@ static_assert(req<int>::failed("") != req{3});
 // TODO: static_assert(req<int>::failed("") != req<int>::failed("a"));
 static_assert(req<int>::failed("a") == req<int>::failed("a"));
 
+static_assert(req{3}.if_failed("b") == req{3});
+static_assert(req<int>::failed("a").if_failed("b") == req<int>::failed("b"));
+
 static_assert([] {
   constexpr const auto flip = [](bool b) { return !b; };
   return req<bool>::failed("Some error message")
