@@ -43,6 +43,9 @@ public:
   [[nodiscard]] constexpr req<T> if_failed(const char *m) const noexcept {
     return {m_val, m_msg == nullptr ? nullptr : m};
   }
+  [[nodiscard]] constexpr req<T> if_failed(auto fn) const noexcept {
+    return m_msg == nullptr ? req<T>{m_val, nullptr} : fn(m_msg);
+  }
   [[nodiscard]] constexpr auto assert(auto fn, const char *m) noexcept {
     if (m_msg != nullptr)
       return req<T>{erred{}, m_msg};
@@ -137,6 +140,10 @@ static_assert(req<int>::failed("a") == req<int>::failed("a"));
 
 static_assert(req{3}.if_failed("b") == req{3});
 static_assert(req<int>::failed("a").if_failed("b") == req<int>::failed("b"));
+static_assert(req{3}.if_failed([](auto msg) { return req{99}; }) == req{3});
+static_assert(req<int>::failed("a").if_failed([](auto msg) {
+  return req{99};
+}) == req{99});
 
 static_assert([] {
   constexpr const auto flip = [](bool b) { return !b; };
