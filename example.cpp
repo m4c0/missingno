@@ -1,5 +1,3 @@
-#pragma leco tool
-
 import missingno;
 
 struct h {
