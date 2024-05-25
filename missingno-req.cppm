@@ -1,5 +1,6 @@
 export module missingno:req;
 import :value;
+import jute;
 import traits;
 
 using namespace traits;
@@ -11,14 +12,15 @@ export template <typename T> class req;
 
 export template <typename T> class req {
   value<T> m_val{};
-  const char *m_msg{};
+  jute::heap m_msg{};
 
-  constexpr req(value<T> val, const char *msg) noexcept
-      : m_val{val}, m_msg{msg} {}
-  constexpr req(erred, const char *msg) noexcept : m_val{}, m_msg{msg} {}
+  constexpr req(value<T> val, jute::heap msg) noexcept
+      : m_val{val}
+      , m_msg{msg} {}
+  constexpr req(erred, jute::heap msg) noexcept : m_val{}, m_msg{msg} {}
 
   [[nodiscard]] constexpr bool is_valid() const noexcept {
-    return m_msg == nullptr;
+    return m_msg == jute::heap{};
   }
   [[nodiscard]] constexpr auto val() const noexcept { return m_val.v; }
   [[nodiscard]] constexpr auto msg() const noexcept { return m_msg; }
@@ -37,17 +39,18 @@ public:
   constexpr req &operator=(const req<T> &) noexcept = default;
   constexpr req &operator=(req<T> &&) noexcept = default;
 
-  [[nodiscard]] constexpr static req<T> failed(const char *m) noexcept {
+  [[nodiscard]] constexpr static req<T> failed(jute::view m) noexcept {
     return {erred{}, m};
   }
-  [[nodiscard]] constexpr req<T> if_failed(const char *m) const noexcept {
-    return {m_val, m_msg == nullptr ? nullptr : m};
+  [[nodiscard]] constexpr req<T> if_failed(jute::view m) const noexcept {
+    return is_valid() ? req<T>{m_val} : failed(m);
   }
-  [[nodiscard]] constexpr req<T> if_failed(auto fn) const noexcept {
-    return m_msg == nullptr ? req<T>{m_val, nullptr} : fn(m_msg);
+  [[nodiscard]] constexpr req<T>
+  if_failed(traits::is_callable<jute::view> auto fn) const noexcept {
+    return is_valid() ? req<T>{m_val} : fn(m_msg);
   }
-  [[nodiscard]] constexpr auto assert(auto fn, const char *m) noexcept {
-    if (m_msg != nullptr)
+  [[nodiscard]] constexpr auto assert(auto fn, jute::view m) noexcept {
+    if (!is_valid())
       return req<T>{erred{}, m_msg};
     if (!mno::map(m_val, fn).v)
       return req<T>{erred{}, m};
@@ -55,7 +58,7 @@ public:
   }
 
   [[nodiscard]] constexpr auto take(auto errfn) {
-    if (m_msg != nullptr) {
+    if (!is_valid()) {
       errfn(m_msg);
     }
     return move_out(m_val);
@@ -64,30 +67,30 @@ public:
   template <typename TT>
     requires is_assignable_from<T, TT>
   [[nodiscard]] constexpr T unwrap(TT def) const noexcept {
-    return m_msg == nullptr ? m_val.v : def;
+    return is_valid() ? m_val.v : def;
   }
   template <typename TT>
     requires is_not_assignable_from<T, TT> && is_same_v<T, call_result_t<TT>>
   [[nodiscard]] constexpr T unwrap(TT def) const noexcept {
-    return m_msg == nullptr ? m_val.v : def();
+    return is_valid() ? m_val.v : def();
   }
   template <typename TT>
   [[nodiscard]] constexpr req<T> otherwise(TT def) const noexcept {
-    return {value<T>{m_msg == nullptr ? m_val.v : def}, nullptr};
+    return req<T>{value<T>{is_valid() ? m_val.v : def}};
   }
 
   [[nodiscard]] constexpr auto map(auto fn) noexcept {
     using O = typename decltype(mno::map(m_val, fn))::type;
 
-    if (m_msg == nullptr)
+    if (is_valid())
       return req<O>{mno::map(m_val, fn)};
     return req<O>{erred{}, m_msg};
   }
   [[nodiscard]] constexpr auto map(auto fn) const noexcept {
     using O = typename decltype(mno::map(m_val, fn))::type;
 
-    if (m_msg == nullptr)
-      return req<O>{mno::map(m_val, fn), nullptr};
+    if (is_valid())
+      return req<O>{mno::map(m_val, fn)};
     return req<O>{erred{}, m_msg};
   }
 
@@ -95,7 +98,7 @@ public:
     using RO = typename decltype(mno::map(m_val, fn))::type;
     using O = typename RO::type;
 
-    if (m_msg == nullptr)
+    if (is_valid())
       return mno::map(m_val, fn).v;
     return req<O>{erred{}, m_msg};
   }
@@ -103,30 +106,30 @@ public:
     using RO = typename decltype(mno::map(m_val, fn))::type;
     using O = typename RO::type;
 
-    if (m_msg == nullptr)
+    if (is_valid())
       return mno::map(m_val, fn).v;
     return req<O>{erred{}, m_msg};
   }
 
   [[nodiscard]] constexpr req<T>
   otherwise(void_consumer auto fn) const noexcept {
-    if (m_msg == nullptr)
-      return req<T>{m_val, nullptr};
+    if (is_valid())
+      return req<T>{m_val};
 
-    return req<T>{mno::map(value<void>{}, fn), nullptr};
+    return req<T>{mno::map(value<void>{}, fn)};
   }
 
   [[nodiscard]] constexpr bool operator==(const req<T> &o) const noexcept {
-    if ((m_msg != nullptr) && (o.m_msg != nullptr))
+    if (!is_valid() && !o.is_valid())
       return true;
-    if ((m_msg != nullptr) != (o.m_msg != nullptr))
+    if (is_valid() != o.is_valid())
       return false;
 
     return m_val == o.m_val;
   }
   template <typename TT>
   [[nodiscard]] constexpr bool operator==(TT v) const noexcept {
-    return (m_msg == nullptr) && m_val.v == v;
+    return is_valid() && m_val.v == v;
   }
 };
 template <typename T> req(T) -> req<T>;
