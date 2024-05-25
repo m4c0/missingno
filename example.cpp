@@ -2,13 +2,13 @@
 
 import missingno;
 
-class h {
+struct h {
   int a;
 };
-class b {
+struct b {
   int a;
 };
-class file {
+struct file {
   int a;
 };
 
