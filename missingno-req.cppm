@@ -47,7 +47,7 @@ public:
   }
   [[nodiscard]] constexpr req<T>
   if_failed(traits::is_callable<jute::view> auto fn) const noexcept {
-    return is_valid() ? req<T>{m_val} : fn(m_msg);
+    return is_valid() ? req<T>{m_val} : fn(*m_msg);
   }
   [[nodiscard]] constexpr auto assert(auto fn, jute::view m) noexcept {
     if (!is_valid())
@@ -59,7 +59,7 @@ public:
 
   [[nodiscard]] constexpr auto take(auto errfn) {
     if (!is_valid()) {
-      errfn(m_msg);
+      errfn(*m_msg);
     }
     return move_out(m_val);
   }
