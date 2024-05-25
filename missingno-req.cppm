@@ -57,6 +57,13 @@ public:
     return req<T>{traits::move(m_val.v)};
   }
 
+  [[nodiscard]] constexpr auto trace(jute::view m) noexcept {
+    if (is_valid())
+      return *this;
+
+    return req<T>{erred{}, m_msg + "\n\twhile " + m};
+  }
+
   [[nodiscard]] constexpr auto take(auto errfn) {
     if (!is_valid()) {
       errfn(*m_msg);
@@ -172,6 +179,13 @@ static_assert(req<int>{}.assert([](auto) { return false; }, "asserted") ==
               req<int>::failed("asserted"));
 static_assert(req<int>{}.assert([](auto) { return true; }, "") == req<int>{});
 static_assert(req{3}.assert([](auto v) { return v == 3; }, "") == req{3});
+
+static_assert(req{3}.trace("testing") == req{3});
+static_assert(req<jute::view>::failed("fail")
+                  .trace("testing")
+                  .if_failed([](jute::view msg) { return req{msg}; })
+                  .unwrap(jute::view{}) ==
+              req<jute::view>{"fail\n\twhile testing"});
 
 static_assert(req{false}.fmap([](bool b) { return req{!b}; }).unwrap(false));
 
