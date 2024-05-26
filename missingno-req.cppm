@@ -23,8 +23,6 @@ export template <typename T> class req {
   [[nodiscard]] constexpr bool is_valid() const noexcept {
     return m_msg == jute::heap{};
   }
-  [[nodiscard]] constexpr auto val() const noexcept { return m_val.v; }
-  [[nodiscard]] constexpr auto msg() const noexcept { return m_msg; }
 
   template <typename TT> friend class req;
 
