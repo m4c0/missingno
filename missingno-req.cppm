@@ -39,7 +39,8 @@ public:
   constexpr req &operator=(req<T> &&) noexcept = default;
 
   [[nodiscard]] constexpr static req<T> failed(jute::view m) noexcept {
-    return {erred{}, m};
+    // TODO: avoid copy if view is not from a heap
+    return {erred{}, jute::heap{} + m};
   }
   [[nodiscard]] constexpr req<T> if_failed(jute::view m) const noexcept {
     return is_valid() ? req<T>{m_val} : failed(m);
@@ -52,7 +53,8 @@ public:
     if (!is_valid())
       return req<T>{erred{}, m_msg};
     if (!mno::map(m_val, fn).v)
-      return req<T>{erred{}, m};
+      // TODO: avoid copy if view is not from a heap
+      return req<T>{erred{}, jute::heap{} + m};
     return traits::move(*this);
   }
 
