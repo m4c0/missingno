@@ -1,6 +1,7 @@
 export module missingno:req;
 import :value;
 import jute;
+import silog;
 import traits;
 
 using namespace traits;
@@ -69,6 +70,12 @@ public:
       errfn(*m_msg);
     }
     return move_out(m_val);
+  }
+  [[nodiscard]] auto log_error() {
+    return take([](auto err) {
+      silog::log(silog::error, "%*s", static_cast<unsigned>(err.size()),
+                 err.data());
+    });
   }
 
   template <typename TT>
