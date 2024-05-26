@@ -55,7 +55,7 @@ public:
       return req<T>{erred{}, m_msg};
     if (!mno::map(m_val, fn).v)
       return req<T>{erred{}, m};
-    return req<T>{traits::move(m_val.v)};
+    return traits::move(*this);
   }
 
   [[nodiscard]] constexpr auto trace(jute::view m) noexcept {
