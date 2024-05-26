@@ -68,7 +68,8 @@ public:
     return trace(*m);
   }
 
-  [[nodiscard]] constexpr auto take(auto errfn) {
+  [[nodiscard]] constexpr auto
+  take(traits::is_callable<jute::view> auto errfn) {
     if (!is_valid()) {
       errfn(*m_msg);
     }
