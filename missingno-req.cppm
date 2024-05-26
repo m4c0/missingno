@@ -76,7 +76,7 @@ public:
   }
   [[nodiscard]] auto log_error() {
     return take([](auto err) {
-      silog::log(silog::error, "%*s", static_cast<unsigned>(err.size()),
+      silog::log(silog::error, "%.*s", static_cast<unsigned>(err.size()),
                  err.data());
     });
   }
