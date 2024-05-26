@@ -58,11 +58,14 @@ public:
     return req<T>{traits::move(m_val.v)};
   }
 
-  [[nodiscard]] constexpr auto trace(jute::view m) noexcept {
+  [[nodiscard]] constexpr auto trace(jute::view m) const noexcept {
     if (is_valid())
       return *this;
 
     return req<T>{erred{}, m_msg + "\n\twhile " + m};
+  }
+  [[nodiscard]] constexpr auto trace(jute::heap m) const noexcept {
+    return trace(*m);
   }
 
   [[nodiscard]] constexpr auto take(auto errfn) {
