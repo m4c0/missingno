@@ -20,10 +20,6 @@ export template <typename T> class req {
       , m_msg{msg} {}
   constexpr req(erred, jute::heap msg) noexcept : m_val{}, m_msg{msg} {}
 
-  [[nodiscard]] constexpr bool is_valid() const noexcept {
-    return m_msg == jute::heap{};
-  }
-
   template <typename TT> friend class req;
 
 public:
@@ -37,6 +33,11 @@ public:
   constexpr req(req<T> &&) noexcept = default;
   constexpr req &operator=(const req<T> &) noexcept = default;
   constexpr req &operator=(req<T> &&) noexcept = default;
+
+  // Unfortunately needed if we need to avoid recursive calls
+  [[nodiscard]] constexpr bool is_valid() const noexcept {
+    return m_msg == jute::heap{};
+  }
 
   [[nodiscard]] constexpr static req<T> failed(jute::view m) noexcept {
     // TODO: avoid copy if view is not from a heap
