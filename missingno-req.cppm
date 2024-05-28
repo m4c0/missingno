@@ -130,6 +130,20 @@ public:
     return req<O>{erred{}, m_msg};
   }
 
+  [[nodiscard]] constexpr auto until_failure(auto fn,
+                                             auto fail_check) const noexcept {
+    if (!is_valid())
+      return fail_check(*m_msg) ? req<T>{erred{}, m_msg} : req<T>{};
+
+    value<T> old = m_val;
+    req<T> res = mno::map(old, fn).v;
+    while (res.is_valid()) {
+      old = res.m_val;
+      res = mno::map(old, fn).v;
+    }
+    return fail_check(*res.m_msg) ? res : req<T>{old};
+  }
+
   [[nodiscard]] constexpr req<T>
   otherwise(void_consumer auto fn) const noexcept {
     if (is_valid())
@@ -234,6 +248,26 @@ static_assert(combine([](auto, auto) {}, req{3}, req<int>::failed("failed")) ==
 static_assert(combine([](auto, auto) {}, req<int>::failed("this failed"),
                       req<int>::failed("also failed")) ==
               req<void>::failed("this failed"));
+
+static_assert(mno::req{3}
+                  .until_failure(
+                      [](auto n) {
+                        return n > 0 ? req{n - 1} : req<int>::failed("ok");
+                      },
+                      [](auto err) { return err != "ok"; })
+                  .map([](auto k) { return k == 0; })
+                  .unwrap(false));
+static_assert(mno::req{3}
+                  .until_failure([](auto) { return req<int>::failed("ok"); },
+                                 [](auto err) { return false; })
+                  .map([](auto k) { return k == 3; })
+                  .unwrap(false));
+static_assert(mno::req{3}
+                  .until_failure([](auto) { return req<int>::failed("nok"); },
+                                 [](auto err) { return true; })
+                  .map([](auto) { return false; })
+                  .if_failed([](auto err) { return req{err == "nok"}; })
+                  .unwrap(false));
 
 static_assert([] {
   struct s {
