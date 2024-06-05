@@ -83,6 +83,13 @@ public:
                  err.data());
     });
   }
+  [[nodiscard]] auto log_error(traits::is_callable<> auto then) {
+    return take([&](auto err) {
+      silog::log(silog::error, "%.*s", static_cast<unsigned>(err.size()),
+                 err.data());
+      then();
+    });
+  }
 
   template <typename TT>
     requires is_assignable_from<T, TT>
