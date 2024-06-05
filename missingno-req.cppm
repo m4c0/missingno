@@ -1,6 +1,7 @@
 export module missingno:req;
 import :value;
 import jute;
+import no;
 import silog;
 import traits;
 
@@ -135,13 +136,26 @@ public:
     if (!is_valid())
       return fail_check(*m_msg) ? req<T>{erred{}, m_msg} : req<T>{};
 
-    value<T> old = m_val;
-    req<T> res = mno::map(old, fn).v;
+    req<T> old = *this;
+    req<T> res = old.fmap(fn);
     while (res.is_valid()) {
-      old = res.m_val;
-      res = mno::map(old, fn).v;
+      old = res;
+      res = old.fmap(fn);
     }
-    return fail_check(*res.m_msg) ? res : req<T>{old};
+    return fail_check(*res.m_msg) ? res : old;
+  }
+  [[nodiscard]] constexpr auto until_failure(auto fn,
+                                             auto fail_check) noexcept {
+    if (!is_valid())
+      return fail_check(*m_msg) ? req<T>{erred{}, m_msg} : req<T>{};
+
+    req<T> old = traits::move(*this);
+    req<T> res = old.fmap(fn);
+    while (res.is_valid()) {
+      old = traits::move(res);
+      res = old.fmap(fn);
+    }
+    return fail_check(*res.m_msg) ? traits::move(res) : traits::move(old);
   }
 
   [[nodiscard]] constexpr req<T>
@@ -270,12 +284,8 @@ static_assert(mno::req{3}
                   .unwrap(false));
 
 static_assert([] {
-  struct s {
+  struct s : no::copy {
     constexpr s() = default;
-    constexpr s(s &&) = default;
-    constexpr s &operator=(s &&) = default;
-    constexpr s(const s &) = delete;
-    constexpr s &operator=(const s &) = delete;
     constexpr bool non_const() { return true; }
   };
   return req<s>()
@@ -284,4 +294,17 @@ static_assert([] {
       .map([](auto &&o) { return o.non_const(); })
       .unwrap(false);
 }());
-}; // namespace mno
+static_assert([] {
+  struct s : no::copy {
+    bool ok = true;
+    constexpr s() = default;
+    constexpr s(bool x) : ok{x} {}
+  };
+  return req<s>()
+      .until_failure(
+          [](auto &&o) { return o.ok ? req<s>(s{false}) : req<s>::failed(""); },
+          [](auto msg) { return false; })
+      .map([](auto &&o) { return true; })
+      .unwrap(false);
+}());
+} // namespace mno
