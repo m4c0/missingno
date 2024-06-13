@@ -254,14 +254,16 @@ static_assert(req{2} != 3);
 static_assert(req<int>::failed("") != 3);
 
 export template <typename A, typename... B>
-[[nodiscard]] constexpr auto combine(auto fn, const req<A> &a,
+[[nodiscard]] constexpr auto combine(traits::is_callable<A, B...> auto fn,
+                                     const req<A> &a,
                                      const req<B> &...b) noexcept {
   return a.fmap([&](auto a) {
     return combine([&](B... b) { return fn(a, b...); }, b...);
   });
 }
 export template <typename A>
-[[nodiscard]] constexpr auto combine(auto fn, const req<A> &a) noexcept {
+[[nodiscard]] constexpr auto combine(traits::is_callable<A> auto fn,
+                                     const req<A> &a) noexcept {
   return a.map(fn);
 }
 static_assert(combine([](auto a, auto b) { return a + b; }, req{3}, req{6}) ==
