@@ -44,6 +44,9 @@ public:
     // TODO: avoid copy if view is not from a heap
     return {erred{}, jute::heap{} + m};
   }
+  [[nodiscard]] constexpr static req<T> failed(jute::heap m) noexcept {
+    return {erred{}, m};
+  }
   [[nodiscard]] constexpr req<T> if_failed(jute::view m) const noexcept {
     return is_valid() ? req<T>{m_val} : failed(m);
   }
@@ -194,6 +197,7 @@ static_assert(req{3} != req<int>::failed(""));
 static_assert(req<int>::failed("") != req{3});
 // TODO: static_assert(req<int>::failed("") != req<int>::failed("a"));
 static_assert(req<int>::failed("a") == req<int>::failed("a"));
+static_assert(req<int>::failed(jute::heap{} + "a") == req<int>::failed("a"));
 
 static_assert(req{3}.if_failed("b") == req{3});
 static_assert(req<int>::failed("a").if_failed("b") == req<int>::failed("b"));
