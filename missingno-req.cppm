@@ -257,8 +257,13 @@ export template <typename A, typename... B>
 [[nodiscard]] constexpr auto combine(traits::is_callable<A, B...> auto fn,
                                      const req<A> &a,
                                      const req<B> &...b) noexcept {
-  return a.fmap([&](auto a) {
-    return combine([&](B... b) { return fn(a, b...); }, b...);
+  return a.fmap([&](auto &&aa) {
+    return combine(
+        [&](auto &&...bb) {
+          return fn(traits::fwd<decltype(aa)>(aa),
+                    traits::fwd<decltype(bb)>(bb)...);
+        },
+        b...);
   });
 }
 export template <typename A>
@@ -318,6 +323,13 @@ static_assert([] {
           [](auto &&o) { return o.ok ? req<s>(s{false}) : req<s>::failed(""); },
           [](auto msg) { return false; })
       .map([](auto &&o) { return true; })
+      .unwrap(false);
+}());
+static_assert([] {
+  mno::req<no::copy> a{};
+  mno::req<no::copy> b{};
+  return combine([](auto &&aa, auto &&bb) { return true; }, traits::move(a),
+                 traits::move(b))
       .unwrap(false);
 }());
 } // namespace mno
