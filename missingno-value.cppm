@@ -31,35 +31,33 @@ template <> struct value<void> {
 };
 template <typename T> value(T) -> value<T>;
 
-template <typename V> [[nodiscard]] constexpr auto move_out(V &&v) noexcept {
+template <typename V> [[nodiscard]] constexpr auto move_out(V &&v) {
   return traits::move(v.v);
 }
-constexpr void move_out(value<void> v) noexcept {}
+constexpr void move_out(value<void> v) {}
 
 template <typename V>
-[[nodiscard]] constexpr auto map(V &&v, mapper<V> auto fn) noexcept {
+[[nodiscard]] constexpr auto map(V &&v, mapper<V> auto fn) {
   return value{fn(fwd<V>(v).v)};
 }
 template <typename V>
-[[nodiscard]] constexpr auto map(V &&v, consumer<V> auto fn) noexcept {
+[[nodiscard]] constexpr auto map(V &&v, consumer<V> auto fn) {
   fn(fwd<V>(v).v);
   return value<void>{};
 }
-[[nodiscard]] constexpr auto map(value<void> v, void_mapper auto fn) noexcept {
+[[nodiscard]] constexpr auto map(value<void> v, void_mapper auto fn) {
   return value{fn()};
 }
-[[nodiscard]] constexpr auto map(value<void> v,
-                                 void_consumer auto fn) noexcept {
+[[nodiscard]] constexpr auto map(value<void> v, void_consumer auto fn) {
   fn();
   return value<void>{};
 }
 template <typename T>
-[[nodiscard]] constexpr bool operator==(const value<T> &a,
-                                        const value<T> &b) noexcept {
+[[nodiscard]] constexpr bool operator==(const value<T> &a, const value<T> &b) {
   return a.v == b.v;
 }
 [[nodiscard]] constexpr bool operator==(const value<void> &a,
-                                        const value<void> &b) noexcept {
+                                        const value<void> &b) {
   return true;
 }
 
@@ -80,7 +78,7 @@ static_assert([] {
     constexpr s &operator=(const s &) = delete;
     constexpr s(s &&) = default;
     constexpr s &operator=(s &&) = default;
-    constexpr bool non_const_check() noexcept { return true; }
+    constexpr bool non_const_check() { return true; }
   };
   value<s> v0{};
   auto v1 = map(v0, [](auto &a) { return a.non_const_check(); });

@@ -10,26 +10,25 @@ export template <typename T> class opt {
 public:
   using type = T;
 
-  constexpr opt() noexcept = default;
+  constexpr opt() = default;
   template <typename TT>
-  constexpr explicit opt(TT &&val) noexcept
-      : m_val{traits::fwd<TT>(val)}, m_filled{true} {}
+  constexpr explicit opt(TT &&val)
+      : m_val{traits::fwd<TT>(val)}
+      , m_filled{true} {}
 
-  constexpr opt(const opt<T> &) noexcept = default;
-  constexpr opt(opt<T> &&) noexcept = default;
-  constexpr opt &operator=(const opt<T> &) noexcept = default;
-  constexpr opt &operator=(opt<T> &&) noexcept = default;
+  constexpr opt(const opt<T> &) = default;
+  constexpr opt(opt<T> &&) = default;
+  constexpr opt &operator=(const opt<T> &) = default;
+  constexpr opt &operator=(opt<T> &&) = default;
 
-  template <typename TT> constexpr opt &operator=(TT &&v) noexcept {
+  template <typename TT> constexpr opt &operator=(TT &&v) {
     m_val = {traits::fwd<TT>(v)};
     m_filled = true;
     return *this;
   }
 
-  [[nodiscard]] constexpr explicit operator bool() const noexcept {
-    return m_filled;
-  }
-  [[nodiscard]] constexpr bool operator==(const opt<T> &o) const noexcept {
+  [[nodiscard]] constexpr explicit operator bool() const { return m_filled; }
+  [[nodiscard]] constexpr bool operator==(const opt<T> &o) const {
     if (m_filled != o.m_filled)
       return false;
     if (!m_filled)
@@ -37,43 +36,42 @@ public:
 
     return m_val == o.m_val;
   }
-  template <typename TT>
-  [[nodiscard]] constexpr bool operator==(TT v) const noexcept {
+  template <typename TT> [[nodiscard]] constexpr bool operator==(TT v) const {
     return m_filled && m_val.v == v;
   }
 
   template <typename TT>
     requires is_assignable_from<T, TT>
-  [[nodiscard]] constexpr T unwrap(TT def) const noexcept {
+  [[nodiscard]] constexpr T unwrap(TT def) const {
     return m_filled ? m_val.v : def;
   }
   template <typename TT>
     requires is_not_assignable_from<T, TT> && is_same_v<T, call_result_t<TT>>
-  [[nodiscard]] constexpr T unwrap(TT def) const noexcept {
+  [[nodiscard]] constexpr T unwrap(TT def) const {
     return m_filled ? m_val.v : def();
   }
 
-  [[nodiscard]] constexpr auto map(auto fn) noexcept {
+  [[nodiscard]] constexpr auto map(auto fn) {
     using O = typename decltype(mno::map(m_val, fn))::type;
     return m_filled ? opt<O>{mno::map(m_val, fn)} : opt<O>{};
   }
-  [[nodiscard]] constexpr auto map(auto fn) const noexcept {
+  [[nodiscard]] constexpr auto map(auto fn) const {
     using O = typename decltype(mno::map(m_val, fn))::type;
     return m_filled ? opt<O>{mno::map(m_val, fn)} : opt<O>{};
   }
 
-  [[nodiscard]] constexpr auto fmap(auto fn) noexcept {
+  [[nodiscard]] constexpr auto fmap(auto fn) {
     using RO = typename decltype(mno::map(m_val, fn))::type;
     using O = typename RO::type;
     return m_filled ? mno::map(m_val, fn).v : opt<O>{};
   }
-  [[nodiscard]] constexpr auto fmap(auto fn) const noexcept {
+  [[nodiscard]] constexpr auto fmap(auto fn) const {
     using RO = typename decltype(mno::map(m_val, fn))::type;
     using O = typename RO::type;
     return m_filled ? mno::map(m_val, fn).v : opt<O>{};
   }
 
-  constexpr void consume(auto fn) noexcept {
+  constexpr void consume(auto fn) {
     if (m_filled)
       fn(m_val.v);
   }
