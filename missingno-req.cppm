@@ -138,6 +138,24 @@ public:
     return req<O>{erred{}, m_msg};
   }
 
+  [[nodiscard]] constexpr auto peek(traits::is_callable_r<void, type> auto fn) {
+    if (is_valid())
+      fn(m_val.v);
+
+    return traits::move(*this);
+  }
+  [[nodiscard]] constexpr auto
+  fpeek(traits::is_callable_r<mno::req<void>, type> auto fn) {
+    if (is_valid()) {
+      auto r = fn(m_val.v);
+      if (!r.is_valid()) {
+        return req<T>{erred{}, r.m_msg};
+      }
+    }
+
+    return traits::move(*this);
+  }
+
   [[nodiscard]] constexpr auto until_failure(auto fn, auto fail_check) const {
     if (!is_valid())
       return fail_check(*m_msg) ? req<T>{erred{}, m_msg} : req<T>{};
@@ -245,6 +263,20 @@ static_assert(req<void>{}
 static_assert(req{3} == 3);
 static_assert(req{2} != 3);
 static_assert(req<int>::failed("") != 3);
+
+static_assert(req{3}.peek([](auto &n) { n++; }) == req{4});
+static_assert(req<int>::failed("failed").peek([](auto) { throw 0; }) ==
+              req<int>::failed("failed"));
+static_assert(req{3}.fpeek([](auto &n) {
+  n++;
+  return req<void>{};
+}) == req{4});
+static_assert(req<int>::failed("fail").fpeek([](auto) -> req<void> {
+  throw 0;
+}) == req<int>::failed("fail"));
+static_assert(req{false}
+                  .fpeek([](auto) { return req<void>::failed("fail"); })
+                  .unwrap(true));
 
 export template <typename A, typename... B>
 [[nodiscard]] constexpr auto combine(traits::is_callable<A, B...> auto fn,
