@@ -141,7 +141,7 @@ public:
     if (is_valid())
       fn(m_val.v);
 
-    return *this;
+    return traits::move(*this);
   }
   [[nodiscard]] constexpr auto
   fpeek(traits::is_callable_r<mno::req<void>, type> auto fn) {
@@ -152,7 +152,7 @@ public:
       }
     }
 
-    return *this;
+    return traits::move(*this);
   }
 
   [[nodiscard]] constexpr auto until_failure(auto fn, auto fail_check) const {
