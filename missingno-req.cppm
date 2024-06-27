@@ -15,9 +15,9 @@ export template <typename T> class req;
 export template <typename T> class req {
   value<T> m_val{};
   jute::heap m_msg{};
+  bool m_erred{};
 
-  constexpr req(value<T> val, jute::heap msg) : m_val{val}, m_msg{msg} {}
-  constexpr req(erred, jute::heap msg) : m_val{}, m_msg{msg} {}
+  constexpr req(erred, jute::heap msg) : m_val{}, m_msg{msg}, m_erred{true} {}
 
   template <typename TT> friend class req;
 
@@ -34,10 +34,9 @@ public:
   constexpr req &operator=(const req<T> &) = default;
   constexpr req &operator=(req<T> &&) = default;
 
-  // Unfortunately needed if we need to avoid recursive calls
-  [[nodiscard]] constexpr bool is_valid() const {
-    return m_msg == jute::heap{};
-  }
+  // Useful for loops. Otherwise we would need a functional recursive approach
+  // without tail calls
+  [[nodiscard]] constexpr bool is_valid() const { return !m_erred; }
 
   [[nodiscard]] constexpr static req<T> failed(jute::view m) {
     // TODO: avoid copy if view is not from a heap
