@@ -142,7 +142,7 @@ public:
     if (is_valid())
       fn(m_val.v);
 
-    return traits::move(*this);
+    return *this;
   }
   [[nodiscard]] constexpr auto
   fpeek(traits::is_callable_r<mno::req<void>, type> auto fn) {
@@ -153,7 +153,7 @@ public:
       }
     }
 
-    return traits::move(*this);
+    return *this;
   }
 
   [[nodiscard]] constexpr auto until_failure(auto fn, auto fail_check) const {
@@ -265,8 +265,10 @@ static_assert(req{2} != 3);
 static_assert(req<int>::failed("") != 3);
 
 static_assert(req{3}.peek([](auto &n) { n++; }) == req{4});
-static_assert(req<int>::failed("failed").peek([](auto) { throw 0; }) ==
-              req<int>::failed("failed"));
+static_assert(req<bool>::failed("failed")
+                  .peek([](auto) { throw 0; })
+                  .if_failed([](auto err) { return req{err == "failed"}; }) ==
+              req{true});
 static_assert(req{3}.fpeek([](auto &n) {
   n++;
   return req<void>{};
@@ -356,4 +358,13 @@ static_assert([] {
                  traits::move(b))
       .unwrap(false);
 }());
+
+static_assert([] {
+  auto res = req<int>{3};
+  bool first = true;
+  while (res.is_valid() && first) {
+    res = res.peek([&](auto) { first = false; });
+  }
+  return res;
+}() == req<int>{3});
 } // namespace mno
