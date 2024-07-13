@@ -200,6 +200,7 @@ public:
   }
 };
 template <typename T> req(T) -> req<T>;
+req() -> req<void>;
 
 static_assert(req{3} == req{3});
 static_assert(req{2} != req{3});
