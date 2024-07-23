@@ -292,9 +292,27 @@ export template <typename A, typename... B>
         b...);
   });
 }
+// TODO: mix and match const/non-const
+export template <typename A, typename... B>
+[[nodiscard]] constexpr auto combine(traits::is_callable<A, B...> auto fn,
+                                     req<A> &a, req<B> &...b) {
+  return a.fmap([&](auto &&aa) {
+    return combine(
+        [&](auto &&...bb) {
+          return fn(traits::fwd<decltype(aa)>(aa),
+                    traits::fwd<decltype(bb)>(bb)...);
+        },
+        b...);
+  });
+}
 export template <typename A>
 [[nodiscard]] constexpr auto combine(traits::is_callable<A> auto fn,
                                      const req<A> &a) {
+  return a.map(fn);
+}
+export template <typename A>
+[[nodiscard]] constexpr auto combine(traits::is_callable<A> auto fn,
+                                     req<A> &a) {
   return a.map(fn);
 }
 static_assert(combine([](auto a, auto b) { return a + b; }, req{3}, req{6}) ==
