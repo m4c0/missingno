@@ -38,14 +38,10 @@ public:
   // without tail calls
   [[nodiscard]] constexpr bool is_valid() const { return !m_erred; }
 
-  [[nodiscard]] constexpr static req<T> failed(jute::view m) {
-    // TODO: avoid copy if view is not from a heap
-    return {erred{}, jute::heap{} + m};
-  }
   [[nodiscard]] constexpr static req<T> failed(jute::heap m) {
     return {erred{}, m};
   }
-  [[nodiscard]] constexpr req<T> if_failed(jute::view m) const {
+  [[nodiscard]] constexpr req<T> if_failed(jute::heap m) const {
     return is_valid() ? req<T>{m_val} : failed(m);
   }
   [[nodiscard]] constexpr req<T>
@@ -67,7 +63,6 @@ public:
 
     return req<T>{erred{}, m_msg + "\n\twhile " + m};
   }
-  [[nodiscard]] constexpr auto trace(jute::heap m) { return trace(*m); }
 
   [[nodiscard]] constexpr auto
   take(traits::is_callable<jute::view> auto errfn) {
