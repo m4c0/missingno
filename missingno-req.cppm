@@ -45,8 +45,8 @@ public:
     return is_valid() ? req<T>{m_val} : failed(m);
   }
   [[nodiscard]] constexpr req<T>
-  if_failed(traits::is_callable<jute::view> auto fn) const {
-    return is_valid() ? req<T>{m_val} : fn(*m_msg);
+  if_failed(traits::is_callable<jute::heap> auto fn) const {
+    return is_valid() ? req<T>{m_val} : fn(m_msg);
   }
   [[nodiscard]] constexpr auto assert(auto fn, jute::view m) {
     if (!is_valid())
