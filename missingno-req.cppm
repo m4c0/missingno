@@ -53,7 +53,7 @@ public:
       return req<T>{erred{}, m_msg};
     if (!mno::map(m_val, fn).v)
       // TODO: avoid copy if view is not from a heap
-      return req<T>{erred{}, jute::heap{} + m};
+      return req<T>{erred{}, jute::heap{m}};
     return traits::move(*this);
   }
 
@@ -61,7 +61,7 @@ public:
     if (is_valid())
       return traits::move(*this);
 
-    return req<T>{erred{}, m_msg + "\n\twhile " + m};
+    return req<T>{erred{}, (m_msg + "\n\twhile " + m).heap()};
   }
 
   [[nodiscard]] constexpr auto
@@ -203,7 +203,7 @@ static_assert(req{3} != req<int>::failed(""));
 static_assert(req<int>::failed("") != req{3});
 // TODO: static_assert(req<int>::failed("") != req<int>::failed("a"));
 static_assert(req<int>::failed("a") == req<int>::failed("a"));
-static_assert(req<int>::failed(jute::heap{} + "a") == req<int>::failed("a"));
+static_assert(req<int>::failed(jute::heap{"a"}) == req<int>::failed("a"));
 
 static_assert(req{3}.if_failed("b") == req{3});
 static_assert(req<int>::failed("a").if_failed("b") == req<int>::failed("b"));
